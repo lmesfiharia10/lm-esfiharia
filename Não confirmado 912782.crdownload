@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LM Esfiharia</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#111;color:#fff;min-height:100vh}
+
+/* HEADER */
+header{
+  background:#000;
+  padding:14px 16px;
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid #222;
+}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-title{font-size:20px;font-weight:bold}
+.status-badge{
+  background:#1a3a1a;color:#4caf50;
+  font-size:11px;padding:3px 8px;border-radius:20px;
+  border:1px solid #2d5a2d;
+}
+.header-right{font-size:12px;color:#888}
+
+/* BUSCA */
+.search-bar{padding:12px 16px;background:#0a0a0a;border-bottom:1px solid #222}
+.search-wrap{position:relative}
+.search-bar input{
+  width:100%;background:#1c1c1c;border:1px solid #333;
+  color:#fff;padding:9px 14px;border-radius:8px;font-size:14px;
+  outline:none;
+}
+.search-bar input::placeholder{color:#666}
+.search-bar input:focus{border-color:#ff9900}
+
+/* MENU */
+.categoria-titulo{
+  padding:16px 16px 8px;
+  font-size:13px;font-weight:bold;
+  text-transform:uppercase;letter-spacing:1px;
+  color:#ff9900;
+  display:flex;align-items:center;gap:8px;
+}
+.categoria-titulo::after{
+  content:'';flex:1;height:1px;background:#222;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+  gap:10px;padding:4px 16px 16px;
+}
+
+.card{
+  background:#1c1c1c;border-radius:12px;
+  overflow:hidden;border:1px solid #282828;
+  position:relative;transition:transform .15s,border-color .15s;
+}
+.card:active{transform:scale(.98)}
+.card.in-cart{border-color:#ff9900}
+
+.card-img-wrap{position:relative;height:110px;background:#222;overflow:hidden}
+.card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.card-img-wrap .no-img{
+  width:100%;height:100%;display:flex;align-items:center;
+  justify-content:center;background:#1a1a1a;
+}
+
+.tag{
+  position:absolute;top:6px;left:6px;
+  background:#c0392b;color:#fff;
+  font-size:10px;font-weight:bold;
+  padding:2px 7px;border-radius:4px;text-transform:uppercase;
+}
+.tag.novo{background:#1565c0}
+
+.card-body{padding:10px}
+.card-nome{font-size:13px;font-weight:bold;margin-bottom:3px}
+.card-desc{font-size:11px;color:#888;margin-bottom:8px;line-height:1.4}
+.card-footer{display:flex;align-items:center;justify-content:space-between}
+.card-preco{color:#ff9900;font-weight:bold;font-size:15px}
+
+.btn-add{
+  background:#ff9900;border:none;
+  width:30px;height:30px;border-radius:8px;
+  font-size:18px;font-weight:bold;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:#000;transition:background .15s,transform .1s;
+  flex-shrink:0;
+}
+.btn-add:active{transform:scale(.9);background:#e68a00}
+.btn-add.flash{background:#fff}
+
+.qty-controls{
+  display:flex;align-items:center;gap:5px;
+}
+.qty-btn{
+  background:#333;border:none;color:#fff;
+  width:26px;height:26px;border-radius:6px;
+  font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.qty-btn:active{background:#555}
+.qty-num{font-size:14px;font-weight:bold;min-width:18px;text-align:center}
+
+/* BOTÃO FLUTUANTE */
+.fab{
+  position:fixed;bottom:22px;right:18px;
+  background:#ff9900;border:none;color:#000;
+  width:58px;height:58px;border-radius:50%;
+  font-size:22px;cursor:pointer;z-index:200;
+  box-shadow:0 4px 16px rgba(255,153,0,.4);
+  display:flex;align-items:center;justify-content:center;
+}
+.fab-badge{
+  position:absolute;top:-4px;right:-4px;
+  background:#e53935;color:#fff;
+  font-size:11px;font-weight:bold;
+  width:20px;height:20px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  display:none;
+}
+.fab-badge.visible{display:flex}
+
+/* OVERLAY */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.overlay.active{opacity:1;pointer-events:all}
+
+/* CARRINHO */
+.cart{
+  position:fixed;right:0;top:0;bottom:0;width:320px;max-width:95vw;
+  background:#111;z-index:400;
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .25s;
+  border-left:1px solid #222;
+}
+.cart.active{transform:none}
+
+.cart-header{
+  padding:16px;border-bottom:1px solid #222;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.cart-header h3{font-size:17px}
+.btn-close{
+  background:none;border:none;color:#aaa;
+  font-size:22px;cursor:pointer;padding:0 4px;
+}
+.btn-close:hover{color:#fff}
+
+.cart-body{flex:1;overflow-y:auto;padding:12px 16px}
+
+.cart-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 0;border-bottom:1px solid #1e1e1e;
+}
+.cart-item-info{flex:1;min-width:0}
+.cart-item-nome{font-size:13px;font-weight:bold}
+.cart-item-preco{font-size:12px;color:#ff9900;margin-top:2px}
+.cart-item-qty{
+  display:flex;align-items:center;gap:6px;
+}
+.cqty-btn{
+  background:#222;border:none;color:#fff;
+  width:24px;height:24px;border-radius:5px;
+  font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.cqty-btn:active{background:#444}
+.cqty-btn.remove{color:#e53935}
+.cqty-num{font-size:13px;font-weight:bold;min-width:16px;text-align:center}
+
+.cart-empty{
+  text-align:center;padding:40px 0;color:#555;
+}
+.cart-empty-icon{display:flex;justify-content:center;margin-bottom:10px}
+.cart-empty-text{font-size:14px}
+
+/* FOOTER DO CARRINHO */
+.cart-footer{padding:16px;border-top:1px solid #222}
+
+.taxa-total{
+  display:flex;flex-direction:column;gap:5px;
+  margin-bottom:14px;
+}
+.linha{display:flex;justify-content:space-between;font-size:13px;color:#aaa}
+.linha.total{color:#fff;font-weight:bold;font-size:15px;margin-top:4px}
+
+.form-group{margin-bottom:10px}
+.form-group input,
+.form-group select{
+  width:100%;background:#1c1c1c;border:1px solid #333;
+  color:#fff;padding:9px 12px;border-radius:8px;
+  font-size:13px;outline:none;
+}
+.form-group input:focus,
+.form-group select:focus{border-color:#ff9900}
+.form-group input::placeholder{color:#555}
+.form-group select option{background:#1c1c1c}
+
+.btn-whatsapp{
+  width:100%;padding:12px;
+  background:#25D366;border:none;color:#fff;
+  font-size:15px;font-weight:bold;border-radius:8px;
+  cursor:pointer;margin-top:4px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .15s;
+}
+.btn-whatsapp:hover{background:#1db954}
+.btn-whatsapp:active{background:#18a349}
+
+.erro{color:#e53935;font-size:12px;margin-top:4px;display:none}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#333;color:#fff;padding:8px 16px;border-radius:20px;
+  font-size:13px;z-index:500;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SEM RESULTADOS */
+.nenhum{text-align:center;padding:30px;color:#555;font-size:14px}
+
+@media(max-width:360px){
+  .grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="header-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff9900" style="vertical-align:middle;margin-right:6px"><path d="M12 2C9 6 6 8 6 13a6 6 0 0012 0c0-3-1.5-5-3-6.5C14.5 8 14 10 13 11c0 0-1-4-1-9z"/></svg>
+      LM Esfiharia
+    </span>
+    <span class="status-badge">
+      <svg width="7" height="7" viewBox="0 0 8 8" style="vertical-align:middle;margin-right:3px"><circle cx="4" cy="4" r="4" fill="#4caf50"/></svg>
+      Aberto
+    </span>
+  </div>
+  <div class="header-right">Seg–Dom 18h–23h</div>
+</header>
+
+<div class="search-bar">
+  <div class="search-wrap">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" style="position:absolute;left:26px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    <input type="text" id="busca" placeholder="Buscar esfiha..." oninput="filtrar()" style="padding-left:36px">
+  </div>
+</div>
+
+<div id="menu"></div>
+
+<button class="fab" onclick="abrirCarrinho()">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/></svg>
+  <span class="badge fab-badge" id="fab-badge">0</span>
+</button>
+
+<div class="overlay" id="overlay" onclick="fecharCarrinho()"></div>
+
+<div class="cart" id="cart">
+  <div class="cart-header">
+    <h3>Seu Pedido</h3>
+    <button class="btn-close" onclick="fecharCarrinho()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="cart-body" id="cart-body">
+    <div class="cart-empty">
+      <div class="cart-empty-icon">🛒</div>
+      <div class="cart-empty-text">Seu carrinho está vazio</div>
+    </div>
+  </div>
+
+  <div class="cart-footer">
+    <div class="taxa-total">
+      <div class="linha"><span>Subtotal</span><span id="subtotal">R$ 0,00</span></div>
+      <div class="linha"><span>Taxa de entrega</span><span>R$ 4,00</span></div>
+      <div class="linha total"><span>Total</span><span id="total">R$ 4,00</span></div>
+    </div>
+
+    <div class="form-group">
+      <input type="text" id="nome" placeholder="Seu nome completo">
+      <div class="erro" id="erro-nome">Informe seu nome</div>
+    </div>
+    <div class="form-group">
+      <input type="text" id="endereco" placeholder="Endereço de entrega">
+      <div class="erro" id="erro-end">Informe o endereço</div>
+    </div>
+    <div class="form-group">
+      <select id="pagamento">
+        <option value="">Forma de pagamento...</option>
+        <option>Pix</option>
+        <option>Cartão de crédito</option>
+        <option>Cartão de débito</option>
+        <option>Dinheiro</option>
+      </select>
+      <div class="erro" id="erro-pag">Selecione a forma de pagamento</div>
+    </div>
+
+    <button class="btn-whatsapp" onclick="enviar()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.524 3.66 1.438 5.168L2 22l4.979-1.405A9.953 9.953 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.946 7.946 0 01-4.306-1.265l-.308-.184-3.198.901.856-3.302-.2-.32A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z"/></svg>
+      Enviar Pedido
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const NUMERO = "5516996055175";
+const TAXA = 4;
+
+const cardapio = {
+  "Premium": [
+    { name: "Costela",                  price: 12.00, img: "", icon: "meat",    tag: "MAIS VENDIDO" },
+    { name: "Carne Seca",               price: 12.00, img: "", icon: "meat" },
+    { name: "Strogonoff de Carne",      price: 15.00, img: "", icon: "pot" },
+    { name: "Strogonoff de Frango",     price: 15.00, img: "", icon: "pot" },
+    { name: "Brócolis com Bacon",       price:  8.50, img: "", icon: "meat" },
+    { name: "Atum Acebolado",           price:  8.00, img: "", icon: "fish" },
+    { name: "Atum Cremoso",             price:  9.00, img: "", icon: "fish" },
+    { name: "Doritos",                  price:  8.00, img: "", icon: "meat" },
+    { name: "Filé com Catupiry",        price: 10.00, img: "", icon: "meat" },
+    { name: "Pepperoni",                price:  8.00, img: "", icon: "meat" },
+    { name: "Calabresa, Bacon e Catupiry", price: 8.50, img: "", icon: "meat" },
+    { name: "Toscana com Vinagree",     price: 10.00, img: "", icon: "meat" },
+    { name: "Camarão",                  price: 15.00, img: "", icon: "fish",   tag: "ESPECIAL" }
+  ],
+  "Tradicional": [
+    { name: "Caipira",                  price:  7.50, img: "", icon: "chicken" },
+    { name: "Calabreza Açebolada",      price:  7.00, img: "", icon: "meat" },
+    { name: "Baiana",                   price:  7.00, img: "", icon: "meat" },
+    { name: "Muçárela",                 price:  7.00, img: "", icon: "cheese" },
+    { name: "Napolitana",               price:  7.00, img: "", icon: "cheese" },
+    { name: "Rúcula e Tomate Seco",     price:  7.00, img: "", icon: "veggie" },
+    { name: "Marguerita",               price:  7.00, img: "", icon: "veggie" },
+    { name: "Milho e Bacon",            price:  7.50, img: "", icon: "meat" },
+    { name: "Bacon",                    price:  7.00, img: "", icon: "meat" },
+    { name: "4 Queijos",                price:  7.00, img: "", icon: "cheese" },
+    { name: "5 Queijos",                price:  7.50, img: "", icon: "cheese" },
+    { name: "Frango com Catupiry",      price:  7.50, img: "", icon: "chicken" },
+    { name: "Carne",                    price:  7.00, img: "", icon: "meat" },
+    { name: "Carne com Queijo",         price:  7.50, img: "", icon: "meat" },
+    { name: "Lombo com Catupiry",       price:  7.50, img: "", icon: "meat" },
+    { name: "Palmito",                  price:  7.00, img: "", icon: "veggie" }
+  ],
+  "Doce": [
+    { name: "2 Amores",                 price:  9.00, img: "", icon: "sweet" },
+    { name: "Prestígio",                price:  8.00, img: "", icon: "sweet" },
+    { name: "Nutella com Morango",      price: 10.00, img: "", icon: "sweet" },
+    { name: "Banana",                   price:  8.00, img: "", icon: "sweet" },
+    { name: "Banana Nevada",            price:  9.00, img: "", icon: "sweet" },
+    { name: "Churros",                  price:  8.00, img: "", icon: "sweet" },
+    { name: "Abacaxi",                  price:  9.00, img: "", icon: "sweet" },
+    { name: "Milho e Bacon Choc. Branco", price: 10.00, img: "", icon: "sweet" },
+    { name: "Ferrero Rocher",           price:  9.00, img: "", icon: "sweet" },
+    { name: "Sonho de Valsa",           price:  9.00, img: "", icon: "sweet" },
+    { name: "Ouro Branco",              price:  9.00, img: "", icon: "sweet" },
+    { name: "Paçoquita",                price:  9.00, img: "", icon: "sweet" },
+    { name: "Oreo",                     price:  8.00, img: "", icon: "sweet" }
+  ]
+};
+
+const ICONS = {
+  meat: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 2 4 5 4 9c0 2.5 1.5 4.5 3 6l1 7h8l1-7c1.5-1.5 3-3.5 3-6 0-4-4-7-8-7z"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+  chicken: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="13" rx="6" ry="7"/><path d="M9 6C9 4 10 2 12 2s3 2 3 4"/><path d="M15 8c2-1 4 0 4 2s-2 2-4 2"/></svg>`,
+  cheese: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="2 18 12 4 22 18 2 18"/><circle cx="9" cy="14" r="1.5" fill="#ff9900"/><circle cx="15" cy="12" r="1.5" fill="#ff9900"/></svg>`,
+  pot: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14v10a2 2 0 01-2 2H7a2 2 0 01-2-2V8z"/><path d="M3 8h18"/><path d="M8 4h8"/><line x1="16" y1="4" x2="19" y2="8"/><line x1="8" y1="4" x2="5" y2="8"/></svg>`,
+  sweet: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M4 14h16"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>`,
+  fish: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2-5 7-8 12-6 2 .7 4 2 5 4-1 2-3 3.3-5 4-5 2-10-1-12-6z"/><path d="M20 10c1-2 1-4 0-6"/><circle cx="17" cy="11" r="1" fill="#ff9900"/></svg>`,
+  veggie: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 4 5 8 6 13c1 4 4 7 6 7s5-3 6-7c1-5-2-9-6-11z"/><line x1="12" y1="22" x2="12" y2="13"/></svg>`
+};
+
+function imgFallback(el, icon) {
+  const div = document.createElement("div");
+  div.className = "no-img";
+  div.innerHTML = ICONS[icon];
+  el.parentNode.replaceChild(div, el);
+}
+
+function trashIcon() {
+  return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+}
+
+// carrinho: { "Categoria-index": quantidade }
+let carrinho = {};
+
+/* ── RENDERIZAÇÃO DO MENU ── */
+function renderMenu(filtro = "") {
+  const container = document.getElementById("menu");
+  let html = "";
+  let algum = false;
+
+  for (const cat in cardapio) {
+    const itens = cardapio[cat].filter(p =>
+      p.name.toLowerCase().includes(filtro.toLowerCase())
+    );
+    if (!itens.length) continue;
+    algum = true;
+
+    html += `<div class="categoria-titulo">${cat}</div><div class="grid">`;
+
+    itens.forEach((p, idx) => {
+      // achar índice real (sem filtro) para chave do carrinho
+      const realIdx = cardapio[cat].indexOf(p);
+      const key = `${cat}-${realIdx}`;
+      const qty = carrinho[key] || 0;
+      const inCart = qty > 0;
+
+      html += `
+        <div class="card${inCart ? " in-cart" : ""}" id="card-${key}">
+          <div class="card-img-wrap">
+            ${p.img
+              ? `<img src="${p.img}" alt="${p.name}" onerror="imgFallback(this,'${p.icon}')">`
+              : `<div class="no-img">${ICONS[p.icon]}</div>`}
+            ${p.tag ? `<div class="tag${p.tag==="NOVO"?" novo":""}">${p.tag}</div>` : ""}
+          </div>
+          <div class="card-body">
+            <div class="card-nome">${p.name}</div>
+            <div class="card-desc">Esfiha artesanal</div>
+            <div class="card-footer">
+              <span class="card-preco">R$ ${p.price.toFixed(2).replace(".",",")}</span>
+              ${qty === 0
+                ? `<button class="btn-add" id="btn-${key}" onclick="adicionar('${cat}',${realIdx})">+</button>`
+                : `<div class="qty-controls">
+                    <button class="qty-btn" onclick="remover('${cat}',${realIdx})">−</button>
+                    <span class="qty-num">${qty}</span>
+                    <button class="qty-btn" onclick="adicionar('${cat}',${realIdx})">+</button>
+                   </div>`
+              }
+            </div>
+          </div>
+        </div>`;
+    });
+
+    html += `</div>`;
+  }
+
+  if (!algum) {
+    html = `<div class="nenhum">Nenhum produto encontrado</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+/* ── AÇÕES DO CARRINHO ── */
+function adicionar(cat, idx) {
+  const key = `${cat}-${idx}`;
+  carrinho[key] = (carrinho[key] || 0) + 1;
+  atualizar();
+  flashBtn(key);
+  mostrarToast(`${cardapio[cat][idx].name} adicionado!`);
+}
+
+function remover(cat, idx) {
+  const key = `${cat}-${idx}`;
+  if (!carrinho[key]) return;
+  carrinho[key]--;
+  if (carrinho[key] === 0) delete carrinho[key];
+  atualizar();
+}
+
+function flashBtn(key) {
+  const btn = document.getElementById(`btn-${key}`);
+  if (!btn) return;
+  btn.classList.add("flash");
+  setTimeout(() => btn.classList.remove("flash"), 200);
+}
+
+/* ── ATUALIZAÇÃO GLOBAL ── */
+function atualizar() {
+  atualizarFAB();
+  renderMenu(document.getElementById("busca").value);
+  if (document.getElementById("cart").classList.contains("active")) {
+    renderCarrinho();
+  }
+}
+
+function atualizarFAB() {
+  const total = Object.values(carrinho).reduce((a, b) => a + b, 0);
+  const badge = document.getElementById("fab-badge");
+  badge.textContent = total;
+  total > 0 ? badge.classList.add("visible") : badge.classList.remove("visible");
+}
+
+/* ── RENDER CARRINHO ── */
+function renderCarrinho() {
+  const body = document.getElementById("cart-body");
+  let html = "";
+  let subtotal = 0;
+
+  for (const key in carrinho) {
+    if (carrinho[key] <= 0) continue;
+    const [cat, idx] = key.split("-");
+    const p = cardapio[cat][parseInt(idx)];
+    const sub = p.price * carrinho[key];
+    subtotal += sub;
+
+    html += `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <div class="cart-item-nome">${p.name}</div>
+          <div class="cart-item-preco">R$ ${sub.toFixed(2).replace(".",",")} 
+            ${carrinho[key] > 1 ? `<span style="color:#666">(${carrinho[key]}x R$ ${p.price.toFixed(2).replace(".",",")})</span>` : ""}
+          </div>
+        </div>
+        <div class="cart-item-qty">
+          <button class="cqty-btn${carrinho[key]===1?" remove":""}" onclick="remover('${cat}',${idx})">
+            ${carrinho[key] === 1 ? trashIcon() : "−"}
+          </button>
+          <span class="cqty-num">${carrinho[key]}</span>
+          <button class="cqty-btn" onclick="adicionar('${cat}',${idx})">+</button>
+        </div>
+      </div>`;
+  }
+
+  if (!html) {
+    html = `<div class="cart-empty">
+      <div class="cart-empty-icon">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/></svg>
+      </div>
+      <div class="cart-empty-text">Seu carrinho está vazio</div>
+    </div>`;
+  }
+
+  body.innerHTML = html;
+  document.getElementById("subtotal").textContent = `R$ ${subtotal.toFixed(2).replace(".",",")}`;
+  document.getElementById("total").textContent = `R$ ${(subtotal + TAXA).toFixed(2).replace(".",",")}`;
+}
+
+/* ── ABRIR / FECHAR CARRINHO ── */
+function abrirCarrinho() {
+  renderCarrinho();
+  document.getElementById("cart").classList.add("active");
+  document.getElementById("overlay").classList.add("active");
+}
+
+function fecharCarrinho() {
+  document.getElementById("cart").classList.remove("active");
+  document.getElementById("overlay").classList.remove("active");
+}
+
+/* ── BUSCA ── */
+function filtrar() {
+  renderMenu(document.getElementById("busca").value);
+}
+
+/* ── VALIDAÇÃO E ENVIO ── */
+function enviar() {
+  const nome = document.getElementById("nome").value.trim();
+  const endereco = document.getElementById("endereco").value.trim();
+  const pagamento = document.getElementById("pagamento").value;
+
+  let ok = true;
+
+  document.getElementById("erro-nome").style.display = nome ? "none" : "block"; if (!nome) ok = false;
+  document.getElementById("erro-end").style.display = endereco ? "none" : "block"; if (!endereco) ok = false;
+  document.getElementById("erro-pag").style.display = pagamento ? "none" : "block"; if (!pagamento) ok = false;
+
+  if (!ok) return;
+
+  const itensVazios = Object.keys(carrinho).filter(k => carrinho[k] > 0).length === 0;
+  if (itensVazios) { mostrarToast("Adicione itens ao pedido!"); return; }
+
+  let msg = `*Pedido LM Esfiharia*\n\n`;
+  msg += `*Nome:* ${nome}\n`;
+  msg += `*Endereço:* ${endereco}\n\n`;
+  msg += `*Itens:*\n`;
+
+  let subtotal = 0;
+  for (const key in carrinho) {
+    if (carrinho[key] <= 0) continue;
+    const [cat, idx] = key.split("-");
+    const p = cardapio[cat][parseInt(idx)];
+    msg += `• ${carrinho[key]}x ${p.name} — R$ ${(p.price * carrinho[key]).toFixed(2).replace(".",",")}\n`;
+    subtotal += p.price * carrinho[key];
+  }
+
+  msg += `\n*Subtotal:* R$ ${subtotal.toFixed(2).replace(".",",")}`;
+  msg += `\n*Entrega:* R$ ${TAXA.toFixed(2).replace(".",",")}`;
+  msg += `\n*Total:* R$ ${(subtotal + TAXA).toFixed(2).replace(".",",")}`;
+  msg += `\n*Pagamento:* ${pagamento}`;
+
+  window.open(`https://wa.me/${NUMERO}?text=${encodeURIComponent(msg)}`);
+}
+
+/* ── TOAST ── */
+function mostrarToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+/* ── INIT ── */
+renderMenu();
+</script>
+</body>
+</html>
